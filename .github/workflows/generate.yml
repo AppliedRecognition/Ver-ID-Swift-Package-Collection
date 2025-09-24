@@ -19,7 +19,7 @@ jobs:
       - name: Set up Swift
         uses: swift-actions/setup-swift@v1
         with:
-          swift-version: "5.9"  # or match your Xcode/Swift version
+          swift-version: "6.1"  # or match your Xcode/Swift version
 
       - name: Build generator
         run: |
