@@ -1,0 +1,40 @@
+name: Generate Collection
+
+on:
+  schedule:
+    - cron: "0 0 * * 0"   # every Sunday at midnight UTC
+  push:
+    paths:
+      - "packages.json"
+
+jobs:
+  generate:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Swift
+        uses: swift-actions/setup-swift@v1
+        with:
+          swift-version: "5.9"  # or match your Xcode/Swift version
+
+      - name: Build generator
+        run: |
+          git clone https://github.com/apple/swift-package-collection-generator
+          cd swift-package-collection-generator
+          swift build -c release
+          cp .build/release/package-collection-generate $GITHUB_WORKSPACE
+
+      - name: Generate collection
+        run: |
+          ./package-collection-generate \
+            packages.json \
+            collection.json
+
+      - name: Commit updated collection
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add collection.json
+          git commit -m "Update collection.json" || echo "No changes"
+          git push
