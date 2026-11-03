@@ -1,0 +1,17 @@
+# Package collection signing material. generate_collection.sh takes the private key by
+# path from this directory, so without these rules a run of the script invites committing
+# the signing key. Nothing here is ever needed by a consumer: they only need collection.json
+# and the certificates, which are public.
+key.pem
+key_rsa.pem
+private.pem
+*.p12
+*.csr
+*.certSigningRequest
+
+# Intermediate written by generate_collection.sh and deleted by it on success. Ignored so an
+# interrupted run does not leave an unsigned collection staged.
+collection_unsigned.json
+
+# macOS
+.DS_Store
