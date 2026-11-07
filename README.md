@@ -31,3 +31,33 @@ A Swift Package Collection is a curated catalog of Swift packages. Instead of ma
     - Xcode will download the package and integrate it into your project automatically.
     
 Now your project has access to all the Swift packages from the Ver-ID Swift Package Collection. You only need to add the collection once per project — after that, you can reuse it anytime you add new packages.
+
+## Deprecated packages
+
+Two packages that used to be listed here are deprecated, and their repositories are archived:
+
+* `Spoof-Detection-Fasnet-Apple` — a cloud FASnet model, three classes at 112×112, unrelated to the two-class 224×224 Stage 2 liveness classifier the Ver-ID 3 pipeline uses.
+* `Spoof-Detection-Fusion-Apple` — that model fused with `Spoof-Device-Detection-Ver-ID-3-Apple`'s device check.
+
+Nothing depends on either, including the legacy `Ver-ID` pod. Use `Spoof-Device-Detection-Ver-ID-3-Apple` instead. Archiving makes those repositories read-only but leaves them clonable and their tags resolvable, so a `Package.resolved` that already pins a version there still resolves.
+
+## How this collection is built
+
+`packages.json` is the input. `generate_collection.sh` turns it into the signed `collection.json`:
+
+```
+package-collection-generate packages.json collection_unsigned.json
+package-collection-sign collection_unsigned.json collection.json key.pem swift_package.der AppleWWDRCAG3.der AppleIncRootCertificate.der
+rm collection_unsigned.json
+```
+
+Neither tool is part of the Swift toolchain — `swift package-collection` offers only add, describe, list, refresh, remove and search. They are built from [`swiftlang/swift-package-collection-generator`](https://github.com/swiftlang/swift-package-collection-generator), branch `5.10`, with `swift build --configuration release`.
+
+The signing key is not in this repository and must not be: `key.pem` and `*.p12` are in `.gitignore`. The certificate is `swift_package.der`; the private key lives in the login Keychain as the **Swift Package Collection: Applied Recognition Inc.** identity. Export it from Keychain Access when it is time to re-sign, and delete it afterwards.
+
+Two things that cost time to find, recorded so they do not cost it twice:
+
+* Keychain Access writes the p12 with **RC2-40-CBC**, which OpenSSL 3 refuses without `-legacy`. Use `/usr/bin/openssl`, which is LibreSSL and handles it natively.
+* LibreSSL's `pkcs12 -nocerts` output begins with a **`Bag Attributes` preamble** that `package-collection-sign` cannot parse. It reports any key-loading failure as `unsupportedKeyType`, which reads like a key-type problem but is not. Strip everything before the first `-----BEGIN`.
+
+The collection lists public packages only: it is a discovery catalogue, so an internal package has no business in it.
